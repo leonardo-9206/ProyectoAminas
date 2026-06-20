@@ -1,0 +1,16 @@
+{
+  "name": "Aminas - Infusiones Pediátricas",
+  "short_name": "Aminas",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#0077b6",
+  "description": "Calculadora PWA 100% offline de infusiones pediátricas.",
+  "icons": [
+    {
+      "src": "icono.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}
