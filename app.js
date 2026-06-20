@@ -30,40 +30,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Escuchar cambios en el peso
-    pesoInput.addEventListener('input', recalculateAllRows);
+    pesoInput.addEventListener('input', () => {
+        recalculateAllRows();
+    });
 
     /**
-     * Agrega una nueva fila a la tabla
-     * @param {Object} data Datos iniciales de la fila
+     * Agrega una nueva fila a la tabla respetando el nuevo orden:
+     * Medicamento | Dosis Real | Unidad | Fármaco | Diluyente | Vol Final | Velocidad | Equivalencia | Acción
      */
     function addRow(data) {
         const tr = document.createElement('tr');
 
         tr.innerHTML = `
             <td><input type="text" class="inp-med" value="${data.nombre}" placeholder="Medicamento"></td>
-            <td><input type="number" class="inp-farmaco" value="${data.farmaco}" step="0.1" min="0"></td>
-            <td><input type="number" class="inp-diluyente" value="${data.diluyente}" step="0.1" min="0"></td>
-            <td><input type="number" class="inp-vol-final" readonly value="0"></td>
-            <td><input type="number" class="inp-equivalencia" readonly value="0"></td>
-            <td><input type="number" class="inp-velocidad" placeholder="0.0" step="0.1" min="0"></td>
             <td><input type="number" class="inp-dosis" placeholder="0.0" step="0.01" min="0"></td>
             <td>
                 <select class="sel-unidad">
                     <option value="mcg/kg/min" ${data.unidad === 'mcg/kg/min' ? 'selected' : ''}>mcg/kg/min</option>
+                    <option value="mcg/kg/h" ${data.unidad === 'mcg/kg/h' ? 'selected' : ''}>mcg/kg/h</option>
                     <option value="mg/kg/h" ${data.unidad === 'mg/kg/h' ? 'selected' : ''}>mg/kg/h</option>
                 </select>
             </td>
+            <td><input type="number" class="inp-farmaco" value="${data.farmaco}" step="0.1" min="0"></td>
+            <td><input type="number" class="inp-diluyente" value="${data.diluyente}" step="0.1" min="0"></td>
+            <td><input type="number" class="inp-vol-final" readonly value="0"></td>
+            <td><input type="number" class="inp-velocidad" placeholder="0.0" step="0.1" min="0"></td>
+            <td><input type="number" class="inp-equivalencia" readonly value="0" title="Dosis obtenida por cada 1 ml/h infundido"></td>
             <td><button class="btn btn-danger btn-delete">X</button></td>
         `;
 
         tableBody.appendChild(tr);
         attachRowEvents(tr);
-        updateRowBaseCalculations(tr); // Calcula volumen final y equivalencia
+        updateRowBaseCalculations(tr);
+        updateEquivalencia(tr);
     }
 
     /**
      * Asocia los eventos a los inputs de una fila específica
-     * @param {HTMLElement} tr Fila de la tabla
      */
     function attachRowEvents(tr) {
         const farmacoInput = tr.querySelector('.inp-farmaco');
@@ -73,23 +76,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const unidadSelect = tr.querySelector('.sel-unidad');
         const btnDelete = tr.querySelector('.btn-delete');
 
-        // Cuando cambia farmaco o diluyente, actualiza base y recalcula dosis manteniendo la velocidad
-        const updateBase = () => {
+        // Cuando cambia farmaco o diluyente: recalcula Volumen, Equivalencia y Dosis (manteniendo velocidad fija)
+        const onBaseChange = () => {
             updateRowBaseCalculations(tr);
+            updateEquivalencia(tr);
             calculateDoseFromRate(tr);
         };
-        farmacoInput.addEventListener('input', updateBase);
-        diluyenteInput.addEventListener('input', updateBase);
+        farmacoInput.addEventListener('input', onBaseChange);
+        diluyenteInput.addEventListener('input', onBaseChange);
 
-        // Si cambia la unidad, recalcula la dosis
-        unidadSelect.addEventListener('change', () => calculateDoseFromRate(tr));
+        // Si cambia la unidad, recalcula Equivalencia y Dosis
+        unidadSelect.addEventListener('change', () => {
+            updateEquivalencia(tr);
+            calculateDoseFromRate(tr);
+        });
 
-        // Eventos bidireccionales (keyup con Enter o change)
+        // Modificar Velocidad -> Recalcular Dosis
         velocidadInput.addEventListener('change', () => calculateDoseFromRate(tr));
         velocidadInput.addEventListener('keyup', (e) => {
             if (e.key === 'Enter') calculateDoseFromRate(tr);
         });
 
+        // Modificar Dosis -> Recalcular Velocidad
         dosisInput.addEventListener('change', () => calculateRateFromDose(tr));
         dosisInput.addEventListener('keyup', (e) => {
             if (e.key === 'Enter') calculateRateFromDose(tr);
@@ -107,88 +115,88 @@ document.addEventListener('DOMContentLoaded', () => {
     function recalculateAllRows() {
         const rows = tableBody.querySelectorAll('tr');
         rows.forEach(tr => {
-            // Asumimos que la velocidad dictamina la dosis si hay un cambio de peso
-            // (Comportamiento común: la bomba de infusión ya está a una velocidad)
+            updateEquivalencia(tr);
             calculateDoseFromRate(tr);
         });
     }
 
     /**
-     * Calcula el Volumen Final y la Equivalencia (Concentración)
-     * Volumen Final = Diluyente (Asumimos que el fármaco ya está diluido en este volumen, práctica común)
-     * Equivalencia = mg de fármaco / ml de volumen final
-     * @param {HTMLElement} tr Fila de la tabla
+     * Calcula el Volumen Final (Asumimos Volumen Final = Diluyente)
      */
     function updateRowBaseCalculations(tr) {
-        const farmaco = parseFloat(tr.querySelector('.inp-farmaco').value) || 0;
         const diluyente = parseFloat(tr.querySelector('.inp-diluyente').value) || 0;
-        
-        // En algunas prácticas Volumen Final = Diluyente + Volumen del Fármaco. 
-        // Para estandarizar, usaremos el diluyente como volumen final (ej: aforar a 50ml).
-        // Si se requiere sumar, se puede cambiar a: const volFinal = farmacoVol + diluyente;
-        const volFinal = diluyente; 
-        
-        tr.querySelector('.inp-vol-final').value = volFinal > 0 ? volFinal.toFixed(1) : 0;
+        tr.querySelector('.inp-vol-final').value = diluyente > 0 ? diluyente.toFixed(1) : 0;
+    }
 
-        let equivalencia = 0;
-        if (volFinal > 0) {
-            equivalencia = farmaco / volFinal; // mg/ml
+    /**
+     * Calcula la Equivalencia: Cuánta dosis representa 1 ml/h de esta dilución
+     * Sirve como factor directo: Dosis = Velocidad * Equivalencia
+     */
+    function updateEquivalencia(tr) {
+        const peso = parseFloat(pesoInput.value);
+        if (!peso || peso <= 0) {
+            tr.querySelector('.inp-equivalencia').value = '0';
+            return;
         }
-        tr.querySelector('.inp-equivalencia').value = equivalencia.toFixed(2);
+
+        const farmaco_mg = parseFloat(tr.querySelector('.inp-farmaco').value) || 0;
+        const vol_final_ml = parseFloat(tr.querySelector('.inp-vol-final').value) || 0;
+        const unidad = tr.querySelector('.sel-unidad').value;
+
+        if (vol_final_ml === 0) {
+            tr.querySelector('.inp-equivalencia').value = '0';
+            return;
+        }
+
+        let equivalencia = 0; // dosis por 1 ml/h
+
+        if (unidad === 'mcg/kg/min') {
+            // Equivalencia (mcg/kg/min por ml/h) = (mg * 1000 * 1) / (peso * vol_final * 60)
+            equivalencia = (farmaco_mg * 1000 * 1) / (peso * vol_final_ml * 60);
+        } else if (unidad === 'mcg/kg/h') {
+            // Equivalencia (mcg/kg/h por ml/h) = (mg * 1000 * 1) / (peso * vol_final)
+            equivalencia = (farmaco_mg * 1000 * 1) / (peso * vol_final_ml);
+        } else if (unidad === 'mg/kg/h') {
+            // Equivalencia (mg/kg/h por ml/h) = (mg * 1) / (peso * vol_final)
+            equivalencia = (farmaco_mg * 1) / (peso * vol_final_ml);
+        }
+
+        tr.querySelector('.inp-equivalencia').value = equivalencia > 0 ? equivalencia.toFixed(4) : '0';
     }
 
     /**
      * Calcula la Dosis Real en base a la Velocidad de Infusión (ml/h)
-     * @param {HTMLElement} tr Fila de la tabla
      */
     function calculateDoseFromRate(tr) {
-        const peso = parseFloat(pesoInput.value);
-        if (!peso || peso <= 0) return; // Requiere peso
-
         const velocidad = parseFloat(tr.querySelector('.inp-velocidad').value) || 0;
-        const equivalencia = parseFloat(tr.querySelector('.inp-equivalencia').value) || 0; // mg/ml
-        const unidad = tr.querySelector('.sel-unidad').value;
-
-        let dosis = 0;
-
-        if (unidad === 'mcg/kg/min') {
-            // FÓRMULA: Dosis (mcg/kg/min) = (Velocidad (ml/h) * Concentración (mg/ml) * 1000) / (Peso (kg) * 60)
-            dosis = (velocidad * equivalencia * 1000) / (peso * 60);
-        } else if (unidad === 'mg/kg/h') {
-            // FÓRMULA: Dosis (mg/kg/h) = (Velocidad (ml/h) * Concentración (mg/ml)) / Peso (kg)
-            dosis = (velocidad * equivalencia) / peso;
-        }
+        const equivalencia = parseFloat(tr.querySelector('.inp-equivalencia').value) || 0;
+        
+        // Ya que Equivalencia = dosis obtenida por 1 ml/h
+        // La Dosis total es simplemente Velocidad * Equivalencia
+        const dosis = velocidad * equivalencia;
 
         tr.querySelector('.inp-dosis').value = dosis > 0 ? dosis.toFixed(2) : '';
     }
 
     /**
      * Calcula la Velocidad de Infusión (ml/h) en base a la Dosis deseada
-     * @param {HTMLElement} tr Fila de la tabla
      */
     function calculateRateFromDose(tr) {
         const peso = parseFloat(pesoInput.value);
         if (!peso || peso <= 0) {
             alert('Por favor, ingresa el peso del paciente primero.');
-            tr.querySelector('.inp-dosis').value = '';
+            tr.querySelector('.inp-velocidad').value = '';
             return;
         }
 
         const dosis = parseFloat(tr.querySelector('.inp-dosis').value) || 0;
-        const equivalencia = parseFloat(tr.querySelector('.inp-equivalencia').value) || 0; // mg/ml
-        const unidad = tr.querySelector('.sel-unidad').value;
+        const equivalencia = parseFloat(tr.querySelector('.inp-equivalencia').value) || 0;
 
         if (equivalencia === 0) return;
 
-        let velocidad = 0;
-
-        if (unidad === 'mcg/kg/min') {
-            // FÓRMULA: Velocidad (ml/h) = (Dosis (mcg/kg/min) * Peso (kg) * 60) / (Concentración (mg/ml) * 1000)
-            velocidad = (dosis * peso * 60) / (equivalencia * 1000);
-        } else if (unidad === 'mg/kg/h') {
-            // FÓRMULA: Velocidad (ml/h) = (Dosis (mg/kg/h) * Peso (kg)) / Concentración (mg/ml)
-            velocidad = (dosis * peso) / equivalencia;
-        }
+        // Ya que Dosis = Velocidad * Equivalencia
+        // Entonces Velocidad = Dosis / Equivalencia
+        const velocidad = dosis / equivalencia;
 
         tr.querySelector('.inp-velocidad').value = velocidad > 0 ? velocidad.toFixed(1) : '';
     }
