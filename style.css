@@ -118,14 +118,19 @@ th {
 
 td input, td select {
     width: 100%;
-    padding: 8px;
+    min-width: 90px;
+    padding: 10px;
     border: 1px solid transparent;
     background-color: var(--input-bg);
     border-radius: 6px;
     text-align: center;
-    font-size: 14px;
+    font-size: 15px;
     color: var(--text-main);
     transition: border 0.2s, background 0.2s;
+}
+
+td input.inp-equivalencia {
+    min-width: 180px;
 }
 
 td input:focus, td select:focus {
