@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const unidadSelect = tr.querySelector('.sel-unidad');
         const btnDelete = tr.querySelector('.btn-delete');
 
-        // Eventos que calculan el FÁRMACO (mg) - El flujo principal
+        // Si el usuario cambia la DOSIS, DILUYENTE o UNIDAD -> Se recalcula el FÁRMACO (mg) necesario
         const triggerCalculateFarmaco = () => {
             updateRowBaseCalculations(tr);
             calculateFarmaco(tr);
@@ -91,21 +91,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dosisInput.addEventListener('input', triggerCalculateFarmaco);
         diluyenteInput.addEventListener('input', triggerCalculateFarmaco);
-        velocidadInput.addEventListener('input', triggerCalculateFarmaco);
         unidadSelect.addEventListener('change', triggerCalculateFarmaco);
 
-        // Evento Inverso: Si el usuario escribe manualmente los FÁRMACOS (mg),
-        // recalculamos la DOSIS real.
-        farmacoInput.addEventListener('change', () => {
+        // Si el usuario cambia la VELOCIDAD o los FÁRMACOS (mg) manualmente -> Se recalcula la DOSIS que está pasando
+        const triggerCalculateDose = () => {
+            updateRowBaseCalculations(tr);
             calculateDose(tr);
             updateEquivalencia(tr);
-        });
-        farmacoInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
-                calculateDose(tr);
-                updateEquivalencia(tr);
-            }
-        });
+        };
+
+        velocidadInput.addEventListener('input', triggerCalculateDose);
+        farmacoInput.addEventListener('input', triggerCalculateDose);
 
         // Botón eliminar
         btnDelete.addEventListener('click', () => {
@@ -224,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             equivalencia = (farmaco_mg * 1) / (peso * vol_final_ml);
         }
 
-        const val = equivalencia > 0 ? equivalencia.toFixed(3) : '0';
+        const val = equivalencia > 0 ? equivalencia.toFixed(1) : '0';
         
         // Mostrar con unidades
         tr.querySelector('.inp-equivalencia').value = val !== '0' ? val + ' ' + unidad + ' / ml/h' : '0';

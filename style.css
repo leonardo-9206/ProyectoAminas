@@ -133,6 +133,10 @@ td input.inp-equivalencia {
     min-width: 180px;
 }
 
+td select.sel-unidad {
+    min-width: 120px;
+}
+
 td input:focus, td select:focus {
     outline: none;
     border-color: var(--primary-color);
