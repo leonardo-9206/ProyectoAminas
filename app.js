@@ -7,20 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Medicamentos preconfigurados (Ahora enfocados en Dosis Objetivo)
     const defaultMeds = [
-        {
-            nombre: 'Dopamina',
-            dosis: 5,        // mcg/kg/min objetivo
-            diluyente: 50,   // ml volumen total
-            velocidad: 1,    // ml/h
-            unidad: 'mcg/kg/min'
-        },
-        {
-            nombre: 'Dobutamina',
-            dosis: 5,        // mcg/kg/min objetivo
-            diluyente: 50,   // ml volumen total
-            velocidad: 1,    // ml/h
-            unidad: 'mcg/kg/min'
-        }
+        { nombre: 'Dopamina', dosis: 5, diluyente: 50, velocidad: 1, unidad: 'mcg/kg/min' },
+        { nombre: 'Dobutamina', dosis: 5, diluyente: 50, velocidad: 1, unidad: 'mcg/kg/min' },
+        { nombre: 'Norepinefrina', dosis: 0.1, diluyente: 50, velocidad: 1, unidad: 'mcg/kg/min' },
+        { nombre: 'Adrenalina', dosis: 0.1, diluyente: 50, velocidad: 1, unidad: 'mcg/kg/min' },
+        { nombre: 'Milrinona', dosis: 0.5, diluyente: 50, velocidad: 1, unidad: 'mcg/kg/min' },
+        { nombre: 'Midazolam', dosis: 0.1, diluyente: 50, velocidad: 1, unidad: 'mg/kg/h' },
+        { nombre: 'Fentanyl', dosis: 1, diluyente: 50, velocidad: 1, unidad: 'mcg/kg/h' },
+        { nombre: 'Dexmedetomidina', dosis: 0.5, diluyente: 50, velocidad: 1, unidad: 'mcg/kg/h' },
+        { nombre: 'Propofol', dosis: 1, diluyente: 50, velocidad: 1, unidad: 'mg/kg/h' }
     ];
 
     // Cargar datos iniciales
@@ -56,7 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
             <td><input type="number" class="inp-diluyente" value="${data.diluyente}" step="0.1" min="0"></td>
             <td><input type="number" class="inp-vol-final" readonly value="0"></td>
             <td><input type="number" class="inp-velocidad" value="${data.velocidad}" placeholder="1.0" step="0.1" min="0"></td>
-            <td><input type="text" class="inp-equivalencia" readonly value="0" title="Dosis obtenida por cada 1 ml/h infundido"></td>
+            <td class="td-equivalencia">
+                <div class="equiv-group">
+                    <input type="text" class="inp-equivalencia" readonly value="0" title="Dosis obtenida por cada 1 ml/h infundido">
+                    <select class="sel-equiv-unidad">
+                        <option value="mcg/kg/min" ${data.unidad === 'mcg/kg/min' ? 'selected' : ''}>mcg/kg/min</option>
+                        <option value="mcg/kg/h" ${data.unidad === 'mcg/kg/h' ? 'selected' : ''}>mcg/kg/h</option>
+                        <option value="mg/kg/h" ${data.unidad === 'mg/kg/h' ? 'selected' : ''}>mg/kg/h</option>
+                    </select>
+                </div>
+            </td>
             <td><button class="btn btn-danger btn-delete">X</button></td>
         `;
 
@@ -80,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const velocidadInput = tr.querySelector('.inp-velocidad');
         const dosisInput = tr.querySelector('.inp-dosis');
         const unidadSelect = tr.querySelector('.sel-unidad');
+        const equivUnidadSelect = tr.querySelector('.sel-equiv-unidad');
         const btnDelete = tr.querySelector('.btn-delete');
 
         // Si el usuario cambia la DOSIS, DILUYENTE o UNIDAD -> Se recalcula el FÁRMACO (mg) necesario
@@ -102,6 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         velocidadInput.addEventListener('input', triggerCalculateDose);
         farmacoInput.addEventListener('input', triggerCalculateDose);
+
+        // Si cambia la unidad de equivalencia, solo recalcular la equivalencia
+        equivUnidadSelect.addEventListener('change', () => {
+            updateEquivalencia(tr);
+        });
 
         // Botón eliminar
         btnDelete.addEventListener('click', () => {
@@ -147,13 +157,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Fórmulas despejadas para mg:
         if (unidad === 'mcg/kg/min') {
-            // mg = (Dosis_mcg/kg/min * Peso_kg * Volumen_Total_ml * 60) / (1000 * Velocidad_ml_h)
             farmaco_mg = (dosis * peso * vol_final_ml * 60) / (1000 * velocidad_ml_h);
         } else if (unidad === 'mcg/kg/h') {
-            // mg = (Dosis_mcg/kg/h * Peso_kg * Volumen_Total_ml) / (1000 * Velocidad_ml_h)
             farmaco_mg = (dosis * peso * vol_final_ml) / (1000 * velocidad_ml_h);
         } else if (unidad === 'mg/kg/h') {
-            // mg = (Dosis_mg/kg/h * Peso_kg * Volumen_Total_ml) / Velocidad_ml_h
             farmaco_mg = (dosis * peso * vol_final_ml) / velocidad_ml_h;
         }
 
@@ -203,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const farmaco_mg = parseFloat(tr.querySelector('.inp-farmaco').value) || 0;
         const vol_final_ml = parseFloat(tr.querySelector('.inp-vol-final').value) || 0;
-        const unidad = tr.querySelector('.sel-unidad').value;
+        const equivUnidad = tr.querySelector('.sel-equiv-unidad').value;
 
         if (vol_final_ml === 0 || farmaco_mg === 0) {
             tr.querySelector('.inp-equivalencia').value = '0';
@@ -212,17 +219,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let equivalencia = 0;
 
-        if (unidad === 'mcg/kg/min') {
+        // Calculamos la equivalencia según la unidad seleccionada específicamente en el dropdown de equivalencia
+        if (equivUnidad === 'mcg/kg/min') {
             equivalencia = (farmaco_mg * 1000 * 1) / (peso * vol_final_ml * 60);
-        } else if (unidad === 'mcg/kg/h') {
+        } else if (equivUnidad === 'mcg/kg/h') {
             equivalencia = (farmaco_mg * 1000 * 1) / (peso * vol_final_ml);
-        } else if (unidad === 'mg/kg/h') {
+        } else if (equivUnidad === 'mg/kg/h') {
             equivalencia = (farmaco_mg * 1) / (peso * vol_final_ml);
         }
 
         const val = equivalencia > 0 ? equivalencia.toFixed(1) : '0';
         
-        // Mostrar con unidades
-        tr.querySelector('.inp-equivalencia').value = val !== '0' ? val + ' ' + unidad + ' / ml/h' : '0';
+        tr.querySelector('.inp-equivalencia').value = val;
     }
 });

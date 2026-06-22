@@ -130,10 +130,20 @@ td input, td select {
 }
 
 td input.inp-equivalencia {
-    min-width: 180px;
+    min-width: 80px;
 }
 
 td select.sel-unidad {
+    min-width: 120px;
+}
+
+.equiv-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.equiv-group select.sel-equiv-unidad {
     min-width: 120px;
 }
 
