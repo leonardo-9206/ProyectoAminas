@@ -294,9 +294,11 @@ td input:focus, td select:focus {
 }
 /* Responsive Card View para Móviles */
 @media screen and (max-width: 768px) {
-    /* Convertir elementos de tabla en bloques */
+    /* Convertir elementos de tabla en bloques y eliminar min-width que causa scroll */
     table, thead, tbody, th, td, tr {
         display: block;
+        width: 100%;
+        min-width: 0 !important;
     }
 
     /* Ocultar el encabezado de la tabla para limpiar espacio */
@@ -314,6 +316,28 @@ td input:focus, td select:focus {
         background-color: var(--card-bg);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         padding: 15px;
+    }
+
+    /* El primer elemento (Medicamento) se convierte en el título centrado de la tarjeta */
+    .td-med-name {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding-bottom: 15px !important;
+        border-bottom: 2px solid #f0f4f8 !important;
+        margin-bottom: 15px !important;
+    }
+
+    .td-med-name::before {
+        display: none !important; /* Ocultar la etiqueta "Medicamento" */
+    }
+
+    .td-med-name input.inp-med {
+        max-width: 100% !important;
+        text-align: center !important;
+        font-size: 18px;
+        padding: 8px;
     }
 
     /* Cada celda es un renglón dentro de la tarjeta */

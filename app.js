@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function switchPatient(id) {
         saveState();
         appState.activePatientId = id;
-        saveState();
+        localStorage.setItem('aminas_pwa_data', JSON.stringify(appState));
         renderTabs();
         renderActivePatient();
     }
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             meds: JSON.parse(JSON.stringify(defaultMeds))
         });
         appState.activePatientId = newId;
-        saveState();
+        localStorage.setItem('aminas_pwa_data', JSON.stringify(appState));
         renderTabs();
         renderActivePatient();
     }
