@@ -24,15 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const defaultMeds = [
-        { nombre: 'Dopamina', dosis: 5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
-        { nombre: 'Dobutamina', dosis: 5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
-        { nombre: 'Norepinefrina', dosis: 0.1, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
-        { nombre: 'Adrenalina', dosis: 0.1, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
-        { nombre: 'Milrinona', dosis: 0.5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
-        { nombre: 'Midazolam', dosis: 0.1, diluyente: 12, velocidad: 1, unidad: 'mg/kg/h', farmaco_unidad: 'mg', equiv_unidad: 'mg/kg/h', velocidad2: 2, equiv_unidad2: 'mg/kg/h' },
-        { nombre: 'Fentanyl', dosis: 1, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/h', farmaco_unidad: 'mcg', equiv_unidad: 'mcg/kg/h', velocidad2: 2, equiv_unidad2: 'mcg/kg/h' },
-        { nombre: 'Dexmedetomidina', dosis: 0.5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/h', farmaco_unidad: 'mcg', equiv_unidad: 'mcg/kg/h', velocidad2: 2, equiv_unidad2: 'mcg/kg/h' },
-        { nombre: 'Propofol', dosis: 1, diluyente: 12, velocidad: 1, unidad: 'mg/kg/h', farmaco_unidad: 'mg', equiv_unidad: 'mg/kg/h', velocidad2: 2, equiv_unidad2: 'mg/kg/h' }
+        { nombre: 'Dopamina', dosis: 0, diluyente: 12, velocidad: 0, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 0, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Dobutamina', dosis: 0, diluyente: 12, velocidad: 0, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 0, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Norepinefrina', dosis: 0, diluyente: 12, velocidad: 0, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 0, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Adrenalina', dosis: 0, diluyente: 12, velocidad: 0, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 0, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Milrinona', dosis: 0, diluyente: 12, velocidad: 0, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 0, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Midazolam', dosis: 0, diluyente: 12, velocidad: 0, unidad: 'mg/kg/h', farmaco_unidad: 'mg', equiv_unidad: 'mg/kg/h', velocidad2: 0, equiv_unidad2: 'mg/kg/h' },
+        { nombre: 'Fentanyl', dosis: 0, diluyente: 12, velocidad: 0, unidad: 'mcg/kg/h', farmaco_unidad: 'mcg', equiv_unidad: 'mcg/kg/h', velocidad2: 0, equiv_unidad2: 'mcg/kg/h' },
+        { nombre: 'Dexmedetomidina', dosis: 0, diluyente: 12, velocidad: 0, unidad: 'mcg/kg/h', farmaco_unidad: 'mcg', equiv_unidad: 'mcg/kg/h', velocidad2: 0, equiv_unidad2: 'mcg/kg/h' },
+        { nombre: 'Propofol', dosis: 0, diluyente: 12, velocidad: 0, unidad: 'mg/kg/h', farmaco_unidad: 'mg', equiv_unidad: 'mg/kg/h', velocidad2: 0, equiv_unidad2: 'mg/kg/h' }
     ];
 
     let appState = {
@@ -60,6 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saved) {
             try {
                 appState = JSON.parse(saved);
+                
+                // Fix para nextPatientId si venía de una versión anterior
+                if (!appState.nextPatientId || isNaN(appState.nextPatientId)) {
+                    appState.nextPatientId = appState.patients.length > 0 
+                        ? Math.max(...appState.patients.map(p => p.id)) + 1 
+                        : 2;
+                }
+
                 appState.patients.forEach(p => {
                     p.meds.forEach(med => {
                         if(typeof med.velocidad2 === 'undefined') {
