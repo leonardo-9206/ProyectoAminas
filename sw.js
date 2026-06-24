@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aminas-pwa-v4';
+const CACHE_NAME = 'aminas-pwa-v5';
 const urlsToCache = [
   './',
   './index.html',

@@ -277,3 +277,92 @@ td input[readonly] {
         border-radius: 8px;
     }
 }
+/* Responsive Card View para Móviles */
+@media screen and (max-width: 768px) {
+    /* Convertir elementos de tabla en bloques */
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+
+    /* Ocultar el encabezado de la tabla para limpiar espacio */
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    /* Cada fila es una "Tarjeta" */
+    tr {
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background-color: var(--card-bg);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        padding: 15px;
+        position: relative;
+    }
+
+    /* Cada celda es un renglón dentro de la tarjeta */
+    td {
+        border: none;
+        border-bottom: 1px solid #f0f4f8;
+        position: relative;
+        padding-left: 45%; 
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        margin: 0;
+    }
+
+    /* Título de cada celda inyectado desde el data-label */
+    td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40%;
+        padding-right: 10px;
+        white-space: normal;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    /* Forzar inputs para que llenen la parte derecha */
+    td input[type="text"],
+    td input[type="number"],
+    td select {
+        width: 100%;
+        max-width: 140px;
+        text-align: right;
+    }
+    
+    .equiv-group {
+        width: 100%;
+        justify-content: flex-end;
+        flex-wrap: wrap; /* Permitir que select se baje si no cabe */
+    }
+
+    .equiv-group select {
+        max-width: 140px;
+        flex-grow: 1;
+    }
+
+    /* Fila de acción (botón borrar) al final sin borde */
+    td:last-child {
+        border-bottom: none;
+        justify-content: center;
+        padding-left: 0;
+        margin-top: 10px;
+    }
+    
+    td:last-child::before {
+        display: none;
+    }
+}

@@ -9,18 +9,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDeletePatient = document.getElementById('btn-delete-patient');
 
     const defaultMeds = [
-        { nombre: 'Dopamina', dosis: 5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min' },
-        { nombre: 'Dobutamina', dosis: 5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min' },
-        { nombre: 'Norepinefrina', dosis: 0.1, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min' },
-        { nombre: 'Adrenalina', dosis: 0.1, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min' },
-        { nombre: 'Milrinona', dosis: 0.5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min' },
-        { nombre: 'Midazolam', dosis: 0.1, diluyente: 12, velocidad: 1, unidad: 'mg/kg/h', farmaco_unidad: 'mg', equiv_unidad: 'mg/kg/h' },
-        { nombre: 'Fentanyl', dosis: 1, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/h', farmaco_unidad: 'mcg', equiv_unidad: 'mcg/kg/h' }, // Fentanyl suele usarse en mcg
-        { nombre: 'Dexmedetomidina', dosis: 0.5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/h', farmaco_unidad: 'mcg', equiv_unidad: 'mcg/kg/h' }, // Dex también
-        { nombre: 'Propofol', dosis: 1, diluyente: 12, velocidad: 1, unidad: 'mg/kg/h', farmaco_unidad: 'mg', equiv_unidad: 'mg/kg/h' }
+        { nombre: 'Dopamina', dosis: 5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Dobutamina', dosis: 5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Norepinefrina', dosis: 0.1, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Adrenalina', dosis: 0.1, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Milrinona', dosis: 0.5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
+        { nombre: 'Midazolam', dosis: 0.1, diluyente: 12, velocidad: 1, unidad: 'mg/kg/h', farmaco_unidad: 'mg', equiv_unidad: 'mg/kg/h', velocidad2: 2, equiv_unidad2: 'mg/kg/h' },
+        { nombre: 'Fentanyl', dosis: 1, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/h', farmaco_unidad: 'mcg', equiv_unidad: 'mcg/kg/h', velocidad2: 2, equiv_unidad2: 'mcg/kg/h' },
+        { nombre: 'Dexmedetomidina', dosis: 0.5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/h', farmaco_unidad: 'mcg', equiv_unidad: 'mcg/kg/h', velocidad2: 2, equiv_unidad2: 'mcg/kg/h' },
+        { nombre: 'Propofol', dosis: 1, diluyente: 12, velocidad: 1, unidad: 'mg/kg/h', farmaco_unidad: 'mg', equiv_unidad: 'mg/kg/h', velocidad2: 2, equiv_unidad2: 'mg/kg/h' }
     ];
 
-    // Estado Global (Múltiples Pacientes)
     let appState = {
         activePatientId: 1,
         nextPatientId: 2,
@@ -34,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
-    // Inicialización
     loadState();
     renderTabs();
     renderActivePatient();
@@ -47,13 +45,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saved) {
             try {
                 appState = JSON.parse(saved);
+                
+                // Migración por si hay pacientes sin las nuevas columnas (velocidad2)
+                appState.patients.forEach(p => {
+                    p.meds.forEach(med => {
+                        if(typeof med.velocidad2 === 'undefined') {
+                            med.velocidad2 = 2;
+                            med.equiv_unidad2 = med.equiv_unidad || 'mcg/kg/min';
+                        }
+                    });
+                });
             } catch (e) {
                 console.error("Error al cargar estado", e);
             }
         }
     }
 
-    // Se llama cada vez que cambia CUALQUIER input
     function saveState() {
         const activePatient = appState.patients.find(p => p.id === appState.activePatientId);
         if (!activePatient) return;
@@ -67,11 +74,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 nombre: tr.querySelector('.inp-med').value,
                 dosis: tr.querySelector('.inp-dosis').value,
                 unidad: tr.querySelector('.sel-unidad').value,
-                farmaco: tr.querySelector('.inp-farmaco').value, // guardamos el valor actual (mg o mcg)
+                farmaco: tr.querySelector('.inp-farmaco').value,
                 farmaco_unidad: tr.querySelector('.sel-farmaco-unidad').value,
                 diluyente: tr.querySelector('.inp-diluyente').value,
                 velocidad: tr.querySelector('.inp-velocidad').value,
-                equiv_unidad: tr.querySelector('.sel-equiv-unidad').value
+                equiv_unidad: tr.querySelector('.sel-equiv-unidad').value,
+                velocidad2: tr.querySelector('.inp-velocidad2').value,
+                equiv_unidad2: tr.querySelector('.sel-equiv-unidad2').value
             };
         });
 
@@ -100,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function switchPatient(id) {
-        // Guardamos antes de cambiar por si acaso
         saveState();
         appState.activePatientId = id;
         saveState();
@@ -139,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     currentPatientName.addEventListener('blur', () => {
         saveState();
-        renderTabs(); // Para actualizar el nombre en la pestaña
+        renderTabs();
     });
     currentPatientName.addEventListener('keyup', (e) => {
         if (e.key === 'Enter') {
@@ -164,7 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
      * LÓGICA DE LA TABLA
      * ======================*/
     btnAddRow.addEventListener('click', () => {
-        addRow({ nombre: '', dosis: 0, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min' });
+        addRow({ 
+            nombre: '', dosis: 0, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', 
+            farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' 
+        });
         saveState();
     });
 
@@ -185,16 +196,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const tr = document.createElement('tr');
 
         tr.innerHTML = `
-            <td><input type="text" class="inp-med" value="${data.nombre}" placeholder="Medicamento" readonly></td>
-            <td><input type="number" class="inp-dosis" value="${data.dosis || ''}" placeholder="0.0" step="0.01" min="0"></td>
-            <td>
+            <td data-label="Medicamento"><input type="text" class="inp-med" value="${data.nombre}" placeholder="Nombre" readonly></td>
+            <td data-label="Dosis Real"><input type="number" class="inp-dosis" value="${data.dosis || ''}" placeholder="0.0" step="0.01" min="0"></td>
+            <td data-label="Unidad Dosis">
                 <select class="sel-unidad">
                     <option value="mcg/kg/min" ${data.unidad === 'mcg/kg/min' ? 'selected' : ''}>mcg/kg/min</option>
                     <option value="mcg/kg/h" ${data.unidad === 'mcg/kg/h' ? 'selected' : ''}>mcg/kg/h</option>
                     <option value="mg/kg/h" ${data.unidad === 'mg/kg/h' ? 'selected' : ''}>mg/kg/h</option>
                 </select>
             </td>
-            <td class="td-farmaco">
+            <td data-label="Fármaco" class="td-farmaco">
                 <div class="equiv-group">
                     <input type="number" class="inp-farmaco" value="${data.farmaco || ''}" placeholder="0.0" step="0.1" min="0" title="Calculado automáticamente">
                     <select class="sel-farmaco-unidad">
@@ -203,10 +214,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </select>
                 </div>
             </td>
-            <td><input type="number" class="inp-diluyente" value="${data.diluyente}" step="0.1" min="0"></td>
-            <td><input type="number" class="inp-vol-final" readonly value="0"></td>
-            <td><input type="number" class="inp-velocidad" value="${data.velocidad}" placeholder="1.0" step="0.1" min="0"></td>
-            <td class="td-equivalencia">
+            <td data-label="Diluyente (ml)"><input type="number" class="inp-diluyente" value="${data.diluyente}" step="0.1" min="0"></td>
+            <td data-label="Vol. Final (ml)"><input type="number" class="inp-vol-final" readonly value="0"></td>
+            <td data-label="Velocidad (ml/h)"><input type="number" class="inp-velocidad" value="${data.velocidad}" placeholder="1.0" step="0.1" min="0"></td>
+            <td data-label="Equivalencia" class="td-equivalencia">
                 <div class="equiv-group">
                     <input type="text" class="inp-equivalencia" readonly value="0" title="Dosis obtenida por cada 1 ml/h infundido">
                     <select class="sel-equiv-unidad">
@@ -216,7 +227,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     </select>
                 </div>
             </td>
-            <td><button class="btn btn-danger btn-delete">X</button></td>
+            <td data-label="Velocidad 2 (ml/h)"><input type="number" class="inp-velocidad2" value="${data.velocidad2}" placeholder="2.0" step="0.1" min="0"></td>
+            <td data-label="Equivalencia 2" class="td-equivalencia">
+                <div class="equiv-group">
+                    <input type="text" class="inp-equivalencia2" readonly value="0" title="Dosis obtenida usando la Velocidad 2">
+                    <select class="sel-equiv-unidad2">
+                        <option value="mcg/kg/min" ${data.equiv_unidad2 === 'mcg/kg/min' ? 'selected' : ''}>mcg/kg/min</option>
+                        <option value="mcg/kg/h" ${data.equiv_unidad2 === 'mcg/kg/h' ? 'selected' : ''}>mcg/kg/h</option>
+                        <option value="mg/kg/h" ${data.equiv_unidad2 === 'mg/kg/h' ? 'selected' : ''}>mg/kg/h</option>
+                    </select>
+                </div>
+            </td>
+            <td><button class="btn btn-outline-danger btn-delete">X</button></td>
         `;
 
         if (!data.nombre) {
@@ -231,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function attachRowEvents(tr) {
         const inputs = tr.querySelectorAll('input, select');
         
-        // Cada vez que un valor de la fila cambie, guardamos el estado
         inputs.forEach(input => {
             input.addEventListener('change', saveState);
             if(input.type === 'number' || input.type === 'text') {
@@ -245,13 +266,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const dosisInput = tr.querySelector('.inp-dosis');
         const unidadSelect = tr.querySelector('.sel-unidad');
         const farmacoUnidadSelect = tr.querySelector('.sel-farmaco-unidad');
+        
         const equivUnidadSelect = tr.querySelector('.sel-equiv-unidad');
+        const velocidad2Input = tr.querySelector('.inp-velocidad2');
+        const equivUnidad2Select = tr.querySelector('.sel-equiv-unidad2');
+        
         const btnDelete = tr.querySelector('.btn-delete');
 
         const triggerCalculateFarmaco = () => {
             updateRowBaseCalculations(tr);
             calculateFarmaco(tr);
-            updateEquivalencia(tr);
+            updateEquivalencias(tr);
         };
 
         dosisInput.addEventListener('input', triggerCalculateFarmaco);
@@ -262,13 +287,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const triggerCalculateDose = () => {
             updateRowBaseCalculations(tr);
             calculateDose(tr);
-            updateEquivalencia(tr);
+            updateEquivalencias(tr);
         };
 
         velocidadInput.addEventListener('input', triggerCalculateDose);
         farmacoInput.addEventListener('input', triggerCalculateDose);
 
-        equivUnidadSelect.addEventListener('change', () => updateEquivalencia(tr));
+        equivUnidadSelect.addEventListener('change', () => updateEquivalencia1(tr));
+        
+        velocidad2Input.addEventListener('input', () => updateEquivalencia2(tr));
+        equivUnidad2Select.addEventListener('change', () => updateEquivalencia2(tr));
 
         btnDelete.addEventListener('click', () => {
             tr.remove();
@@ -280,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rows = tableBody.querySelectorAll('tr');
         rows.forEach(tr => {
             calculateFarmaco(tr);
-            updateEquivalencia(tr);
+            updateEquivalencias(tr);
         });
     }
 
@@ -352,36 +380,46 @@ document.addEventListener('DOMContentLoaded', () => {
         tr.querySelector('.inp-dosis').value = dosis > 0 ? dosis.toFixed(decimals) : '';
     }
 
-    function updateEquivalencia(tr) {
+    function updateEquivalencias(tr) {
+        updateEquivalencia1(tr);
+        updateEquivalencia2(tr);
+    }
+
+    function updateEquivalencia1(tr) {
+        const equivalencia = calculateEquivalenceBySpeed(tr, 1, tr.querySelector('.sel-equiv-unidad').value);
+        const decimals = getDecimals(tr, 1);
+        tr.querySelector('.inp-equivalencia').value = equivalencia > 0 ? equivalencia.toFixed(decimals) : '0';
+    }
+
+    function updateEquivalencia2(tr) {
+        const velocidad2 = parseFloat(tr.querySelector('.inp-velocidad2').value) || 0;
+        const equivalencia2 = calculateEquivalenceBySpeed(tr, velocidad2, tr.querySelector('.sel-equiv-unidad2').value);
+        const decimals = getDecimals(tr, 1);
+        tr.querySelector('.inp-equivalencia2').value = equivalencia2 > 0 ? equivalencia2.toFixed(decimals) : '0';
+    }
+
+    function calculateEquivalenceBySpeed(tr, speed, targetUnit) {
         const peso = parseFloat(pesoInput.value);
-        if (!peso || peso <= 0) {
-            tr.querySelector('.inp-equivalencia').value = '0';
-            return;
-        }
+        if (!peso || peso <= 0) return 0;
 
         const input_farmaco = parseFloat(tr.querySelector('.inp-farmaco').value) || 0;
         const farmaco_unidad = tr.querySelector('.sel-farmaco-unidad').value;
         const farmaco_mg = farmaco_unidad === 'mcg' ? input_farmaco / 1000 : input_farmaco;
 
         const vol_final_ml = parseFloat(tr.querySelector('.inp-vol-final').value) || 0;
-        const equivUnidad = tr.querySelector('.sel-equiv-unidad').value;
 
-        if (vol_final_ml === 0 || farmaco_mg === 0) {
-            tr.querySelector('.inp-equivalencia').value = '0';
-            return;
+        if (vol_final_ml === 0 || farmaco_mg === 0 || speed === 0) return 0;
+
+        let result = 0;
+
+        if (targetUnit === 'mcg/kg/min') {
+            result = (farmaco_mg * 1000 * speed) / (peso * vol_final_ml * 60);
+        } else if (targetUnit === 'mcg/kg/h') {
+            result = (farmaco_mg * 1000 * speed) / (peso * vol_final_ml);
+        } else if (targetUnit === 'mg/kg/h') {
+            result = (farmaco_mg * speed) / (peso * vol_final_ml);
         }
 
-        let equivalencia = 0;
-
-        if (equivUnidad === 'mcg/kg/min') {
-            equivalencia = (farmaco_mg * 1000 * 1) / (peso * vol_final_ml * 60);
-        } else if (equivUnidad === 'mcg/kg/h') {
-            equivalencia = (farmaco_mg * 1000 * 1) / (peso * vol_final_ml);
-        } else if (equivUnidad === 'mg/kg/h') {
-            equivalencia = (farmaco_mg * 1) / (peso * vol_final_ml);
-        }
-
-        const decimals = getDecimals(tr, 1);
-        tr.querySelector('.inp-equivalencia').value = equivalencia > 0 ? equivalencia.toFixed(decimals) : '0';
+        return result;
     }
 });
