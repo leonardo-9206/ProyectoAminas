@@ -8,6 +8,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentPatientName = document.getElementById('current-patient-name');
     const btnDeletePatient = document.getElementById('btn-delete-patient');
 
+    // Diccionario Médico: Rangos y Colores Pastel
+    const medInfo = {
+        'midazolam': { color: '#e3f2fd', range: '0.5 - 6 mcgr/kg/min' }, // azul pastel
+        'fentanyl': { color: '#f3e5f5', range: '0.5 - 5 mcgr/kg/hr' }, // morado pastel
+        'fentanilo': { color: '#f3e5f5', range: '0.5 - 5 mcgr/kg/hr' },
+        'propofol': { color: '#e8f5e9', range: '0.3 - 0.6 mg/kg/hr' }, // verde pastel
+        'adrenalina': { color: '#ffebee', range: '0.05 - 2 mcgr/kg/min' }, // rojo pastel
+        'dopamina': { color: '#fff3e0', range: '2 - 20 mcgr/kg/min' }, // naranja pastel
+        'dobutamina': { color: '#e0f7fa', range: '5 - 20 mcgr/kg/min' }, // cian pastel
+        'norepinefrina': { color: '#fce4ec', range: '0.05 - 2 mcgr/kg/min' }, // rosa pastel
+        'milrinona': { color: '#ede7f6', range: '0.25 - 0.75 mcgr/kg/min' }, // violeta pastel
+        'nitroglicerina': { color: '#fbe9e7', range: '0.5 - 20 mcgr/kg/min' }, // mamey pastel
+        'nitroprusiato': { color: '#e8eaf6', range: '0.05 - 0.8 mcgr/kg/min' }, // indigo pastel
+    };
+
     const defaultMeds = [
         { nombre: 'Dopamina', dosis: 5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
         { nombre: 'Dobutamina', dosis: 5, diluyente: 12, velocidad: 1, unidad: 'mcg/kg/min', farmaco_unidad: 'mg', equiv_unidad: 'mcg/kg/min', velocidad2: 2, equiv_unidad2: 'mcg/kg/min' },
@@ -45,8 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saved) {
             try {
                 appState = JSON.parse(saved);
-                
-                // Migración por si hay pacientes sin las nuevas columnas (velocidad2)
                 appState.patients.forEach(p => {
                     p.meds.forEach(med => {
                         if(typeof med.velocidad2 === 'undefined') {
@@ -92,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * ======================*/
     function renderTabs() {
         tabsContainer.innerHTML = '';
-        
         appState.patients.forEach(p => {
             const btn = document.createElement('button');
             btn.className = 'tab' + (p.id === appState.activePatientId ? ' active' : '');
@@ -184,6 +196,21 @@ document.addEventListener('DOMContentLoaded', () => {
         saveState();
     });
 
+    function applyMedStyles(tr) {
+        const input = tr.querySelector('.inp-med');
+        const rangeDiv = tr.querySelector('.med-range');
+        const medName = input.value.trim().toLowerCase();
+        
+        const info = medInfo[medName];
+        if (info) {
+            input.style.backgroundColor = info.color;
+            rangeDiv.innerText = `Rango: ${info.range}`;
+        } else {
+            input.style.backgroundColor = '';
+            rangeDiv.innerText = '';
+        }
+    }
+
     function getDecimals(tr, defaultDec) {
         const medName = tr.querySelector('.inp-med').value.trim().toLowerCase();
         if (['norepinefrina', 'adrenalina', 'milrinona'].includes(medName)) {
@@ -196,7 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const tr = document.createElement('tr');
 
         tr.innerHTML = `
-            <td data-label="Medicamento"><input type="text" class="inp-med" value="${data.nombre}" placeholder="Nombre" readonly></td>
+            <td data-label="Medicamento" class="td-med-name">
+                <input type="text" class="inp-med" value="${data.nombre}" placeholder="Nombre" readonly>
+                <div class="med-range"></div>
+            </td>
             <td data-label="Dosis Real"><input type="number" class="inp-dosis" value="${data.dosis || ''}" placeholder="0.0" step="0.01" min="0"></td>
             <td data-label="Unidad Dosis">
                 <select class="sel-unidad">
@@ -246,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         tableBody.appendChild(tr);
+        applyMedStyles(tr);
         attachRowEvents(tr);
         updateRowBaseCalculations(tr);
     }
@@ -260,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        const medInput = tr.querySelector('.inp-med');
         const farmacoInput = tr.querySelector('.inp-farmaco');
         const diluyenteInput = tr.querySelector('.inp-diluyente');
         const velocidadInput = tr.querySelector('.inp-velocidad');
@@ -272,6 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const equivUnidad2Select = tr.querySelector('.sel-equiv-unidad2');
         
         const btnDelete = tr.querySelector('.btn-delete');
+
+        medInput.addEventListener('input', () => applyMedStyles(tr));
 
         const triggerCalculateFarmaco = () => {
             updateRowBaseCalculations(tr);

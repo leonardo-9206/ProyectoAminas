@@ -201,7 +201,8 @@ td select.sel-unidad {
 }
 
 .equiv-group select.sel-equiv-unidad,
-.equiv-group select.sel-farmaco-unidad {
+.equiv-group select.sel-farmaco-unidad,
+.equiv-group select.sel-equiv-unidad2 {
     min-width: 80px;
 }
 
@@ -209,10 +210,24 @@ td input:focus, td select:focus {
     outline: none;
     border-color: var(--primary-color);
     background-color: white;
+    box-shadow: 0 0 0 2px rgba(0, 119, 182, 0.1);
 }
 
-/* Campos de solo lectura */
-td input[readonly] {
+.inp-med {
+    font-weight: 600;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s;
+}
+
+.med-range {
+    font-size: 10px;
+    color: #888;
+    margin-top: 4px;
+    text-align: center;
+    line-height: 1.1;
+    min-height: 12px;
+}td input[readonly] {
     background-color: transparent;
     color: var(--text-muted);
     font-weight: bold;
@@ -299,7 +314,6 @@ td input[readonly] {
         background-color: var(--card-bg);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         padding: 15px;
-        position: relative;
     }
 
     /* Cada celda es un renglón dentro de la tarjeta */
@@ -307,24 +321,20 @@ td input[readonly] {
         border: none;
         border-bottom: 1px solid #f0f4f8;
         position: relative;
-        padding-left: 45%; 
-        min-height: 40px;
+        padding: 10px 0;
+        min-height: auto;
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        padding-top: 10px;
-        padding-bottom: 10px;
+        justify-content: space-between;
         margin: 0;
     }
 
     /* Título de cada celda inyectado desde el data-label */
     td::before {
         content: attr(data-label);
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 40%;
+        position: static;
+        width: auto;
+        max-width: 45%;
         padding-right: 10px;
         white-space: normal;
         text-align: left;
@@ -332,6 +342,7 @@ td input[readonly] {
         color: var(--text-muted);
         font-size: 13px;
         line-height: 1.2;
+        flex-shrink: 0;
     }
 
     /* Forzar inputs para que llenen la parte derecha */
@@ -339,14 +350,16 @@ td input[readonly] {
     td input[type="number"],
     td select {
         width: 100%;
-        max-width: 140px;
+        max-width: 55%;
         text-align: right;
+        flex-grow: 1;
     }
     
     .equiv-group {
         width: 100%;
+        max-width: 55%;
         justify-content: flex-end;
-        flex-wrap: wrap; /* Permitir que select se baje si no cabe */
+        flex-wrap: wrap; 
     }
 
     .equiv-group select {
