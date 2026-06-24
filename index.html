@@ -16,7 +16,15 @@
             <p class="subtitle">Calculadora de Infusiones Pediátricas</p>
         </header>
 
+        <section class="tabs-section" id="tabs-container">
+            <!-- Pestañas dinámicas aquí -->
+        </section>
+
         <section class="patient-section">
+            <div class="patient-header">
+                <h2 id="current-patient-name" contenteditable="true" title="Toca para renombrar">Paciente 1</h2>
+                <button id="btn-delete-patient" class="btn btn-outline-danger">Borrar Paciente</button>
+            </div>
             <div class="input-group">
                 <label for="peso">Peso del Paciente (kg):</label>
                 <input type="number" id="peso" step="0.1" min="0" placeholder="Ej. 10.5">
